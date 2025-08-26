@@ -147,7 +147,7 @@ return [
     'features' => [
         Features::registration(),
         Features::resetPasswords(),
-        // Features::emailVerification(),
+        Features::emailVerification(),
         Features::updateProfileInformation(),
         Features::updatePasswords(),
         Features::twoFactorAuthentication([
@@ -155,6 +155,22 @@ return [
             'confirmPassword' => true,
             // 'window' => 0,
         ]),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Redirect Paths
+    |--------------------------------------------------------------------------
+    |
+    | Here you may configure the redirect paths for different authentication
+    | actions. You can customize where users are redirected after login,
+    | registration, and other authentication actions.
+    |
+    */
+
+    'redirects' => [
+        'login' => '/',
+        'register' => '/email/verify',
     ],
 
 ];
