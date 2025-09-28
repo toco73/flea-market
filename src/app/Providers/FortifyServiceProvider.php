@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 use Laravel\Fortify\Fortify;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Requests\LoginRequest;
+use Lalavel\Fortify\Comtracts\LoginResponse;
+use App\Http\Responses\LoginResponse as CustomLoginResponse;
 
 class FortifyServiceProvider extends ServiceProvider
 {
@@ -22,7 +24,7 @@ class FortifyServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(LoginResponse::class, CustomLoginResponse::class);
     }
 
     /**
@@ -45,14 +47,6 @@ class FortifyServiceProvider extends ServiceProvider
             return view('auth.verify');
         });
 
-        Fortify::authenticateUsing(function(Request $request){
-            app(LoginRequest::class)->validateResolved();
-            $credentials = $request->only('email','password');
-            if(Auth::attempt($credentials,$request->boolean('remember'))){
-                return Auth::user();
-            }
-        });
-        
         RateLimiter::for('login',function(Request $request){
             $email = (string) $request->email;
             return Limit::perMinute(10)->by($email . $request->ip());

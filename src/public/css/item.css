@@ -1,0 +1,75 @@
+.item-container {
+    width: 100%;
+    padding: 80px;
+    display: flex;
+    justify-content: center;
+}
+.item__inner {
+    width: 50%;
+    margin-left: 20px;
+}
+.item-card__image {
+    width: 80%;
+    height: 50%;
+    margin-top: 50px;
+}
+.item__inner h1 {
+    margin-bottom: 0;
+    font-size: 45px;
+}
+.item-card__brand {
+    margin-top: 0;
+    font-size: 20px;
+}
+.item-card__price {
+    margin-top: 0;
+    font-size: 45px;
+}
+.like-comment {
+    display: flex;
+    justify-content: center;
+}
+button {
+    border: none;
+    background-color: #FFFFFF;
+    padding: 0;
+}
+.like-button {
+    width: 20%;
+    height: 20%;
+}
+.liked-button {
+    width: 20%;
+    height: 20%;
+    background-color: #FF5555;
+}
+.comment-button{
+    width: 10%;
+    height: 10%;
+}
+.purchase-link {
+    margin-top: 20px;
+}
+.purchase {
+    width: 400px;
+    padding: 10px 120px;
+    
+    background-color: #FF5555;
+    border-color: #FF5555;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 26px;
+    font-weight: bold;
+    text-decoration: none;
+}
+.comment-form {
+    width: 400px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #FF5555;
+    border-color: #FF5555;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 26px;
+    font-weight: bold;
+}

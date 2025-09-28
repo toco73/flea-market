@@ -1,0 +1,49 @@
+.profile-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 60px;
+    height: 100vh;
+}
+.profile-container h1 {
+    font-size: 36px;
+    text-align: center;
+}
+input[type="file"] {
+    display: none;
+}
+.plofile__icon-label {
+    border: solid 2px #FF5555;
+    border-radius: 10px;
+    color: #FF5555;
+    font-size: 20px;
+}
+.profile-container label {
+    font-weight: bold;
+    font-size: 24px;
+    text-align: left;
+}
+.profile-container input {
+    border: solid 1px #5F5F5F;
+    border-radius: 4px;
+    width: 400px;
+    padding: 10px;
+    margin: 10px 0;
+}
+.profile-container button {
+    width: 400px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #FF5555;
+    border-color: #FF5555;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 26px;
+    font-weight: bold;
+}
+.profile-container a {
+    text-decoration: none;
+    font-size: 20px;
+    color: #0073CC;
+    margin-top: 10px;
+}

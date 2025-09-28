@@ -24,16 +24,18 @@ class LoginRequest extends FormRequest
     public function rules()
     {
         return [
-            'email'=>['required' , 'email','exists:user,email'],
-            'password'=>'required',
+            'email' => ['required' , 'email','exists:users,email'],
+            'password' => ['required'],
         ];
     }
+
     public function messages()
     {
+        \Log::debug('LoginRequest messages() 呼ばれた');
         return [
-            'email.required'=>'メールアドレスを入力してください',
-            'email.exixsts'=>'ログイン情報が登録されていません',
-            'password.required'=>'パスワードを入力してください',
+            'email.required' => 'メールアドレスを入力してください',
+            'email.exists' => 'ログイン情報が登録されていません',
+            'password.required' => 'パスワードを入力してください',
         ];
     }
 }
