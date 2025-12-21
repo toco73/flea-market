@@ -4,6 +4,9 @@
     display: flex;
     justify-content: center;
 }
+small {
+    font-size: 30px;
+}
 .item__inner {
     width: 50%;
     margin-left: 20px;
@@ -29,6 +32,14 @@
     display: flex;
     justify-content: center;
 }
+.item-card__like-comennt {
+    display: flex;
+    justify-content: flex-start;
+    margin-right: 20px;
+}
+.item-card__like{
+    margin-right: 0px;
+}
 button {
     border: none;
     background-color: #FFFFFF;
@@ -36,16 +47,16 @@ button {
 }
 .like-button {
     width: 20%;
-    height: 20%;
+    height: 10%;
 }
 .liked-button {
     width: 20%;
-    height: 20%;
+    height: 10%;
     background-color: #FF5555;
 }
 .comment-button{
-    width: 10%;
-    height: 10%;
+    width: 30%;
+    height: 90%;
 }
 .purchase-link {
     margin-top: 20px;
@@ -62,7 +73,37 @@ button {
     font-weight: bold;
     text-decoration: none;
 }
-.comment-form {
+.item-info {
+    display: flex;
+    flex-direction: row;
+}
+.item-info__category {
+    background-color: #D9D9D9;
+    border-radius: 15px;
+    margin-left: 40px;
+    padding: 3px 10px;
+}
+.item-info__condition {
+    margin-left: 40px;
+    padding-top: 5px;
+}
+.profile-icon {
+    width: 10%;
+    height: 5%;
+    border-radius: 50%;
+}
+.item__comment-label {
+    color: #5F5F5F;
+}
+.item__comment-content {
+    width: 400px;
+    padding: 10px;
+    background-color: #E5E5E5;
+    border-radius: 5px;
+    font-size: 20px;
+    color: #000000;
+}
+.comment-form__button {
     width: 400px;
     padding: 10px;
     margin: 10px 0;

@@ -9,14 +9,14 @@
         @csrf
         <label>メールアドレス</label><br>
         <input type="email" name="email" value="{{old('email')}}">
-        <p class="login-page__eeror-message">
+        <p class="login-page__error-message">
             @error('email')
             {{$message}}
             @enderror
         </p>
         <label>パスワード</label><br>
         <input type="password" name="password" value="{{old('password')}}">
-        <p class="login-page__eeror-message">
+        <p class="login-page__error-message">
             @error('password')
             {{$message}}
             @enderror

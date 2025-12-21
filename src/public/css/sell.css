@@ -1,0 +1,47 @@
+.sell-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 60px;
+    height: 100vh;
+}
+.sell__image {
+    display: flex;
+    flex-direction: column;
+}
+.sell__image label {
+    font-size: 24px;
+    font-weight: bold;
+}
+.sell__image-input input[type="file"] {
+    display: none;
+}
+.sell__image-label {
+    border: solid 2px #FF5555;
+    border-radius: 10px;
+    color: #FF5555;
+    font-size: 20px;
+}
+h2 {
+    color: #5F5F5F;
+    border-bottom: solid 1px #5F5F5F;
+    font-size: 30px;
+}
+.item-info input {
+    border: solid 1px #5F5F5F;
+    border-radius: 4px;
+    width: 400px;
+    padding: 10px;
+    margin: 10px 0;
+}
+.sell-container button {
+    width: 400px;
+    padding: 10px;
+    margin: 10px 0;
+    background-color: #FF5555;
+    border-color: #FF5555;
+    border-radius: 4px;
+    color: #FFFFFF;
+    font-size: 26px;
+    font-weight: bold;
+}

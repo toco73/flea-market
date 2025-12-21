@@ -19,6 +19,7 @@ class Item extends Model
         'description',
         'seller_id',
         'buyer_id',
+        'status',
     ];
 
     public function category(){
@@ -48,7 +49,16 @@ class Item extends Model
     public function buyer(){
         return $this->belongsTo(User::class,'buyer_id');
     }
+
     public function isSold(){
         return !is_null($this->buyer_id);
+    }
+
+    public function oders(){
+        return $this->hasMany(Oder::class);
+    }
+
+    public function sold(){
+        return SoldItem::where('item_id',$this->id)->exists();
     }
 }

@@ -11,13 +11,15 @@ use App\Models\Category;
 use App\Models\Condition;
 use App\Models\Comment;
 use App\Models\Profile;
+use App\Models\Oder;
+use App\Models\SoldItem;
 use App\Http\Requests\ProfileRequest;
 use App\Http\Requests\ExhibitionRequest;
 use App\Http\Requests\CommentRequest;
 use App\Http\Requests\AddressRequest;
 use App\Http\Requests\PurchaseRequest;
-use Stripe\Stripe;
-use Stripe\Checkout\Session;
+use Stripe\StripeClient;
+use Illuminate\Support\Facades\Log;
 
 class ItemController extends Controller
 {
@@ -102,6 +104,14 @@ class ItemController extends Controller
         $item = Item::findOrFail($itemId);
         $paymentMethod = $request->payment_method;
 
+        $shippingData = [
+            'sending_postcode' => $request->sending_postcode, 
+            'sending_address' => $request->sending_address,   
+            'sending_building' => $request->sending_building,
+        ];
+
+        session()->put('shipping_data_' . $itemId, $shippingData);
+
         return redirect()->route('stripe.checkout', [
             'item_id' => $item->id,
             'payment_method' => $paymentMethod,
@@ -110,18 +120,13 @@ class ItemController extends Controller
 
     //Stripe画面
     public function checkout(Request $request,$itemId){
-
         $item = Item::findOrFail($itemId);
+        $shippingData = session()->get('shipping_data_' . $itemId);
 
-        $stripe = new \Stripe\StripeClient(config('services.stripe.secret'));
+        $stripe = new StripeClient(config('services.stripe.secret'));
 
         $paymentMethod = $request->payment_method ?? 'カード払い';
-
-        if($paymentMethod === 'コンビニ払い'){
-            $stripePaymentMethod = 'konbini';
-        }else{
-            $stripePaymentMethod = 'card';
-        }
+        $stripePaymentMethod = ($paymentMethod === 'コンビニ払い') ? 'konbini' : 'card' ;
 
         $session = $stripe->checkout->sessions->create([
             'payment_method_types' => [$stripePaymentMethod],
@@ -133,9 +138,17 @@ class ItemController extends Controller
                 ],
                 'quantity' => 1,
             ]],
+            'billing_address_collection' => 'required',
+            'customer_email' => Auth::user()->email ?? null,
             'mode' => 'payment',
-            'success_url' => route('stripe.success',['item_id' => $item->id]),
+            'success_url' => route('stripe.success', ['item_id' => $item->id]) . '?session_id={CHECKOUT_SESSION_ID}',
             'cancel_url' => route('stripe.cancel'),
+
+            'metadata' => [
+                'postcode' => $shippingData['sending_postcode'] ?? '',
+                'address' => $shippingData['sending_address'] ?? '',
+                'building' => $shippingData['sending_building'] ?? '',
+            ],
         ]);
 
         return redirect()->away($session->url);      
@@ -143,13 +156,34 @@ class ItemController extends Controller
 
     //決済完了後
     public function success(Request $request,$itemId){
-        $item = Item::findOrFail($itemId);
-        
-        $item->buyer_id = auth()->id();
-        $item->save();
+        $sessionId = $request->get('session_id');
+        $stripe = new StripeClient(config('services.stripe.secret'));
+        $session = $stripe->checkout->sessions->retrieve($sessionId);
 
-        return redirect('/');
+        if($session->payment_status === 'paid'){
+            $item = Item::findOrFail($itemId);
+            $buyerId = auth()->id();
+
+            $metadata = $session->metadata;
+
+            $item->buyer_id = $buyerId;
+            $item->status = 'in_progress';
+            $item->save();
+
+            SoldItem::create([
+                'user_id' => $buyerId, 
+                'item_id' => $itemId,
+                'sending_postcode' => $metadata->postcode,
+                'sending_address' => $metadata->address,
+                'sending_building' => $metadata->building,
+            ]);
+            session()->forget('shipping_data_' . $itemId);
+
+            return redirect('mypage?page=transaction');
+        }
+        return redirect('/purchase');
     }
+
     public function cancel(){
         return redirect('/purchase');
     }
@@ -175,24 +209,33 @@ class ItemController extends Controller
 
     //プロフィール画面
     public function mypage(Request $request){
-        $profile = auth()->user()->profile;
         $user = Auth::user();
+        $profile = $user->profile;
         $items = collect();
         $page = $request->query('page','sell');
         $tab = null;
 
+        $transaction_items = Item::where('status', 'in_progress')
+            ->where(function ($query) use ($user) {
+                $query->where('seller_id', $user->id)
+                    ->orWhere('buyer_id', $user->id);
+            });
+        
+        $transaction_count = $transaction_items->count();
+
         if($page === 'buy'){
-            $items = Item::where('buyer_id',$user->id)->get();
+            $items = Item::where('buyer_id',$user->id)->where('status', 'sold')->get();
         }elseif($page === 'sell'){
-            $items = Item::where('seller_id',$user->id)->get();
+            $items = Item::where('seller_id',$user->id)->where('status', 'selling')->get();
+        }elseif($page === 'transaction'){
+            $items = $transaction_items->get();
         }
-        return view('mypage',compact('profile','items','page','tab'));
+        return view('mypage',compact('profile','items','page','tab','transaction_count'));
     }
 
     //プロフィール編集画面
     public function edit(){
-        $user = auth()->user();
-        $profile = $user->profile;
+        $profile = Auth::user()->profile;
         return view('profile',compact('profile'));
     }
     public function update(ProfileRequest $request){

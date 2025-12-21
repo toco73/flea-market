@@ -5,6 +5,7 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use Illuminate\Http\Request;
 use App\Http\Controllers\ItemController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\ChatController;
 
 //商品一覧画面
 Route::get('/',[ItemController::class,'index']);
@@ -28,7 +29,7 @@ Route::middleware('auth')->group(function(){
 //Stripe用
 Route::get('/stripe/checkout/{item_id}',[ItemController::class,'checkout'])->name('stripe.checkout');
 Route::post('/stripe/checkout/{item_id}',[ItemController::class,'checkout'])->name('checkout');
-Route::get('/stripe/success',[ItemController::class,'success'])->name('stripe.success');
+Route::get('/stripe/success/{item_id}',[ItemController::class,'success'])->name('stripe.success');
 Route::get('/stripe/cancel',[ItemController::class,'cancel'])->name('stripe.cancel');
 
 //ログイン画面
@@ -36,24 +37,31 @@ Route::get('/login',[AuthController::class,'showLoginForm'])->name('login');
 Route::post('/login',[AuthController::class,'login']);
 
 //プロフィール画面
-Route::get('/mypage',[ItemController::class,'mypage'])->middleware(['auth','verified'])->name('mypage');
-
-//プロフィール編集画面
-Route::get('/mypage/profile',function(){
-    return view('profile');
-})->middleware(['auth','verified'])->name('mypage.profile');
-Route::get('/maypage/profile',[ItemController::class,'edit'])->name('profile.edit');
-Route::patch('/maypage/profile',[ItemController::class,'update'])->middleware(['auth','verified'])->name('profile.update');
+Route::middleware(['auth','verified'])->group(function () {
+    Route::get('/mypage',[ItemController::class,'mypage'])->name('mypage');
+    //取引中の商品
+    Route::get('/transaction/chat/{item_id}', [ChatController::class,'showChat'])->name('transaction.chat');
+    Route::post('/transaction/chat/{item_id}/send', [ChatController::class,'sendMessage'])->name('chat.send');
+    // メッセージ編集
+    Route::patch('/transaction/chat/message/{id}', [ChatController::class,'updateMessage']);
+    // メッセージ削除
+    Route::delete('/transaction/chat/message/{id}', [ChatController::class,'destroyMessage']);
+    //プロフィール編集画面
+    Route::get('/mypage/profile',[ItemController::class,'edit'])->name('profile.edit');
+    Route::patch('/mypage/profile',[ItemController::class,'update'])->name('profile.update');
+});
 
 //メール認証機能
 Route::get('/email/verify', function () {
     return view('auth.verify-email'); 
 })->middleware('auth')->name('verification.notice');
+
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill(); // ユーザーを「認証済み」にする
     return redirect()->route('mypage.profile'); // 認証後に遷移する場所
     return redirect()->route('mypage');
 })->middleware(['auth', 'signed'])->name('verification.verify');
+
 Route::post('/email/verification-notification', function (Request $request) {
     $request->user()->sendEmailVerificationNotification();
     return back()->with('message', 'Verification link sent!');

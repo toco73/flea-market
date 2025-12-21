@@ -1,7 +1,4 @@
 .profile-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
     margin-top: 60px;
     height: 100vh;
 }
@@ -9,10 +6,20 @@
     font-size: 36px;
     text-align: center;
 }
+.profile__innner {
+    display: flex;
+    flex-direction: column;
+    text-align: center;
+}
 input[type="file"] {
     display: none;
 }
-.plofile__icon-label {
+.profile__icon-img {
+    width: 20%;
+    height: 20%;
+    border-radius: 50%;
+}
+.profile__icon-label {
     border: solid 2px #FF5555;
     border-radius: 10px;
     color: #FF5555;
