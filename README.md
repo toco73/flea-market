@@ -26,6 +26,42 @@
     
 　6.シーディングの実行  
 　　php artisan db:seed  
+
+## メール認証
+mailtrapというツールを使用しています。<br>
+以下のリンクから会員登録をしてください。　<br>
+https://mailtrap.io/
+
+メールボックスのIntegrationsから 「laravel 7.x and 8.x」を選択し、　<br>
+.envファイルのMAIL_MAILERからMAIL_ENCRYPTIONまでの項目をコピー＆ペーストしてください。　<br>
+MAIL_FROM_ADDRESSは任意のメールアドレスを入力してください。　
+
+## Stripeについて
+コンビニ支払いとカード支払いのオプションがありますが、決済画面にてコンビニ支払いを選択しますと、レシートを印刷する画面に遷移します。そのため、カード支払いを成功させた場合に意図する画面遷移が行える想定です。<br>
+
+また、StripeのAPIキーは以下のように設定をお願いいたします。
+```
+STRIPE_PUBLIC_KEY="パブリックキー"
+STRIPE_SECRET_KEY="シークレットキー"
+```
+
+以下のリンクは公式ドキュメントです。<br>
+https://docs.stripe.com/payments/checkout?locale=ja-JP
+
+## リアルタイム通信
+pusherというツールを使用しています。<br>
+以下のリンクからアカウントを作成してください。<br>
+https://pusher.com/
+
+.envファイルにAPIキーは以下のように設定をお願いいたします。
+```
+PUSHER_APP_ID="your-app-id"
+PUSHER_APP_KEY="your-app-key"
+PUSHER_APP_SECRET="your-app-secret"
+PUSHER_APP_CLUSTER="your-app-cluster"
+```
+以下のリンクは公式ドキュメントです。<br>
+https://www.issoh.co.jp/tech/details/2931/#Pusher
      
 ## 使用技術(実行環境)
 　・PHP7.4.9  
@@ -33,7 +69,7 @@
  　・MySQL8.0.26  
 
 ## ER図
-<img width="561" height="1021" alt="er-diagram" src="https://github.com/user-attachments/assets/0fbd0e74-6892-4770-906c-f415541bdbe5" />
+<img width="891" height="1021" alt="er-diagram" src="https://github.com/user-attachments/assets/788626fd-793d-4cc8-bbee-7f6e4ef47226" />
 
 
 ## URL
