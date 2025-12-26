@@ -42,10 +42,13 @@ Route::middleware(['auth','verified'])->group(function () {
     //取引中の商品
     Route::get('/transaction/chat/{item_id}', [ChatController::class,'showChat'])->name('transaction.chat');
     Route::post('/transaction/chat/{item_id}/send', [ChatController::class,'sendMessage'])->name('chat.send');
+    Route::get('/transaction/chat/{item_id}/fetch',[ChatController::class,'fetchMessages']);
     // メッセージ編集
     Route::patch('/transaction/chat/message/{id}', [ChatController::class,'updateMessage']);
     // メッセージ削除
     Route::delete('/transaction/chat/message/{id}', [ChatController::class,'destroyMessage']);
+    Route::post('/transaction/{item_id}/complete', [ChatController::class, 'completeTransaction'])
+    ->name('transaction.complete');
     //プロフィール編集画面
     Route::get('/mypage/profile',[ItemController::class,'edit'])->name('profile.edit');
     Route::patch('/mypage/profile',[ItemController::class,'update'])->name('profile.update');

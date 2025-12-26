@@ -35,10 +35,10 @@
                 </div>
                 <h3 class="partner-name">「{{ $partnerName }}」さんとの取引画面</h3>
                 
-                {{-- ★ 黄緑枠：購入者のみに表示するロジック ★ --}}
+                {{-- 黄緑枠：購入者のみに表示するロジック --}}
                 @if($isBuyer)
                     <div class="transaction-actions">
-                        <button class="btn btn-complete" type="button" onClick="handleOpenModal()">取引を完了する</button>
+                        <button class="btn btn-complete" type="button" onclick="openRatingModal()">取引を完了する</button>
                     </div>
                 @endif
             </div>
@@ -52,7 +52,7 @@
                 </div>
             </div>
 
-            {{-- ★ オレンジ枠：チャット表示エリア ★ --}}
+            {{-- オレンジ枠：チャット表示エリア --}}
             <div class="chat-messages" id="message-list">
                 @foreach($messages as $msg)
                     {{-- メッセージごとに自分のものか判定 --}}
@@ -88,7 +88,7 @@
                                 <p class="message-text">{{ $msg->message }}</p>
                             </div>
 
-                            {{-- ★ 編集・削除ボタン：自分のメッセージのみ表示 ★ --}}
+                            {{-- 編集・削除ボタン：自分のメッセージのみ表示 --}}
                             @if($isMine)
                                 <div class="message-options">
                                     <button type="button" class="opt-btn edit-btn" onclick="editMessage({{ $msg->id }})">編集</button>
@@ -125,6 +125,25 @@
                     </div>
                 </form>
             </div>
+            <div id="ratingModal" class="modal-overlay">
+                <div class="modal-content">
+                    <p class="modal-title">取引が完了しました。</p>
+                    <p class="modal-text">今回の取引相手はどうでしたか？</p>
+                    
+                    <form action="{{ route('transaction.complete', $item->id) }}" method="POST">
+                        @csrf
+                        <div class="star-rating">
+                            @for ($i = 1; $i <= 5; $i++)
+                                <span class="star" data-value="{{ $i }}">&#9733;</span>
+                            @endfor
+                        </div>
+                        <input type="hidden" name="rating" id="rating-value" value="">
+                        <button type="submit" class="btn star-send">
+                            送信する
+                        </button>
+                    </form>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -132,77 +151,89 @@
 
 @section('scripts')
 <script>
+let lastMessageId = {{ $messages->last()->id ?? 0 }};
+
 document.addEventListener('DOMContentLoaded', function () {
     const chatForm = document.getElementById('chat-form');
     const messageInput = document.getElementById('message-input');
     const messageList = document.getElementById('message-list');
     const itemId = document.getElementById('chat-app').dataset.itemId;
     const storageKey = `chat_draft_${itemId}`;
-    const authUserId = {{ Auth::id()}};
+    const authUserId = {{ Auth::id() }};
 
-    // 1. ページ読み込み時に保存された内容があれば復元
+    //下書き復元
     const savedMessage = localStorage.getItem(storageKey);
     if (savedMessage) {
         messageInput.value = savedMessage;
     }
 
-    // 2. 入力するたびに localStorage に保存（リアルタイム保持）
-    messageInput.addEventListener('input', function() {
-        localStorage.setItem(storageKey, this.value);
+    //下書き保存
+    messageInput.addEventListener('input', () => {
+        localStorage.setItem(storageKey, messageInput.value);
     });
 
-    // 3. 送信が成功したら localStorage を削除する
-    // 送信ボタンのクリックイベントや、Ajaxの成功レスポンス内に記述
-    /*
-    function onMessageSent() {
-        localStorage.removeItem(storageKey);
-        messageInput.value = '';
-    }
-    */
-
-    // --- 送信処理 ---
-    chatForm.addEventListener('submit', function (e) {
-        e.preventDefault(); // ★ これがリロードを防ぐ重要な一行です
-
+    //送信処理
+    chatForm.addEventListener('submit', async function (e) {
+        e.preventDefault();
         const message = messageInput.value;
+        if(!message.trim()) return;
 
         try{
-            fetch(`/transaction/chat/${itemId}/send`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                'Accept' : 'application/json'
-            },
-            body: JSON.stringify({ message })
+            const response = await fetch(`/transaction/chat/${itemId}/send`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept' : 'application/json'
+                },
+                body: JSON.stringify({ message })
             });
+
             if (response.status === 422){
                 const errorData = await response.json();
                 alert(errorData.errors.message[0]);
                 return;
             }
-            const data = await response.json();
-            appendMessage(data, 'my-message');
-            messageInput.value = '';
-            messageList.scrollTop = messageList.scrollHeight;
+
+            if(response.ok){
+                const data = await response.json();
+                appendMessage(data, 'my-message');
+                messageInput.value = '';
+                localStorage.removeItem(storageKey);
+                messageList.scrollTop = messageList.scrollHeight;
+                lastMessageId = data.id;
+            }
         }catch(error){
             console.error('Error:', error);
         } 
     });
 
-    // --- リアルタイム受信 (Laravel Echo) ---
-    window.Echo.private(`chat.${itemId}`)
-        .listen('MessageSent', (e) => {
-            // 自分以外のメッセージなら左側に表示
-            if (e.message.user_id === authUserId){
-                appendMessage(e.message, 'my-message');
-            }else{
-                appendMessage(e.message, 'partner-message');
-            }
-        });
+    //ポーリング受信
+    async function fetchNewMessages(){
+        try{
+            const response = await fetch(`/transaction/chat/${itemId}/fetch?last_id=${lastMessageId}`);
+            const messages = await response.json();
+
+            messages.forEach(msg => {
+                if(msg.id > lastMessageId){
+                    const className = (msg.user_id === authUserId) ? 'my-message' : 'partner-message';
+                    appendMessage(msg,className);
+                    lastMessageId = msg.id;
+                }
+            });
+        }catch(error){
+            console.error('Fetch error:',error);
+        }
+    }
+
+    //3秒ごとに新着確認
+    setInterval(fetchNewMessages,3000);
 
     // --- メッセージ追加用関数 ---
     function appendMessage(data, className) {
+        //重複防止
+        if(document.getElementById(`msg-${data.id}`)) return;
+
         const div = document.createElement('div');
         div.className = `message-wrapper ${className}`;
         div.id = `msg-${data.id}`;
@@ -227,7 +258,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 });
 
-// --- 編集・削除の実装 (JavaScript) ---
+//編集・削除の実装
 function editMessage(id) {
     const msgElement = document.querySelector(`#msg-${id} .message-text`);
     const originalText = msgElement.innerText;
@@ -256,32 +287,30 @@ function deleteMessage(id) {
     }
 }
 
-// Modal Component
-const RatingModal = ({ isOpen, onSubmit }) => {
-  if (!isOpen) return null;
+//モーダル
+function openRatingModal(){
+    const modal = document.getElementById('ratingModal');
+    if(modal){
+        modal.style.display = 'flex';
+    }else{
+        console.error('Rating modal element not found');
+    }
+}
+document.querySelectorAll('.star').forEach(star => {
+    star.addEventListener('click', function() {
+        const value = this.getAttribute('data-value');
+        document.getElementById('rating-value').value = value;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-[#FFFFE0] p-6 rounded-lg shadow-xl w-96 text-center">
-        <h2 className="text-xl font-bold mb-4">取引が完了しました。</h2>
-        <p className="text-gray-600 mb-4">今回の取引相手はどうでしたか？</p>
-        
-        {/* 星評価 UI */}
-        <div className="flex justify-center gap-2 mb-6">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <StarIcon key={star} className="h-10 w-10 text-yellow-400 cursor-pointer" />
-          ))}
-        </div>
-
-        <button 
-          onClick={onSubmit}
-          className="bg-red-400 text-white px-8 py-2 rounded-md hover:bg-red-500 transition"
-        >
-          送信する
-        </button>
-      </div>
-    </div>
-  );
-};
+        // 全ての星から一度 active を消し、選択された数まで再度付与する
+        document.querySelectorAll('.star').forEach(s => {
+            const starValue = s.getAttribute('data-value');
+            if (starValue <= value) {
+                s.classList.add('active');
+            } else {
+                s.classList.remove('active');
+            }
+        });
+    });
+});
 </script>
 @endsection

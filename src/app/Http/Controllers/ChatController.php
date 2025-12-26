@@ -58,11 +58,21 @@ class ChatController extends Controller
             'message' => $request->message,
         ]);
 
-        $message->load('user.profile');
-
-        broadcast(new MessageSent($message))->toOthers();
-
         return response()->json($message);
+    }
+
+    //新着メッセージの取得
+    public function fetchMessages(Request $request,$itemId)
+    {
+        $lastId = $request->query('last_id',0);
+
+        $newMessages = ChatMessage::where('item_id',$itemId)
+            ->where('id','>',$lastId)
+            ->with('user.profile')
+            ->orderBy('id','asc')
+            ->get();
+
+        return response()->json($newMessages);
     }
 
     // メッセージ更新
@@ -79,5 +89,20 @@ class ChatController extends Controller
         $message = ChatMessage::where('id', $id)->where('user_id', Auth::id())->firstOrFail();
         $message->delete();
         return response()->json(['status' => 'success']);
+    }
+    public function completeTransaction(Request $request, $itemId)
+    {
+        $item = Item::findOrFail($itemId);
+        
+        // 二重完了防止（すでに売却済みの場合はリダイレクトなど）
+        if ($item->status === 'sold') {
+            return redirect('/')->with('error', 'この取引はすでに完了しています。');
+        }
+
+        $item->update([
+            'status' => 'sold'
+        ]);
+
+        return redirect('/');
     }
 }
